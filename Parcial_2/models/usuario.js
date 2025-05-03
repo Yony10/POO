@@ -1,25 +1,9 @@
-class Usuario {
-    constructor(id, nombre, credito = 0) {
-        this.id = id;
-        this.nombre = nombre;
-        this.credito = credito;
-    }
+const mongoose = require('mongoose');
 
-    agregarCredito(cantidad) {
-        this.credito += cantidad;
-    }
+const usuarioSchema = new mongoose.Schema({
+    id: String,
+    nombre: String,
+    credito: { type: Number, default: 0 }
+});
 
-    usarCredito() {
-        if (this.credito > 0) {
-            this.credito--;
-            return true;
-        }
-        return false;
-    }
-
-    devolverCredito() {
-        this.credito++;
-    }
-}
-
-module.exports = Usuario;
+const Usuario = mongoose.model('Usuario', usuarioSchema);

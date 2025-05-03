@@ -1,25 +1,14 @@
-class Envio {
-    constructor(id, usuarioId, nombre, direccion, telefono, referencia, observacion) {
-        this.id = id;
-        this.usuarioId = usuarioId;
-        this.nombre = nombre;
-        this.direccion = direccion;
-        this.telefono = telefono;
-        this.referencia = referencia;
-        this.observacion = observacion;
-        this.producto = null;
-    }
+const mongoose = require('mongoose');
+const productoSchema = require('./producto');
 
-    agregarProducto(producto) {
-        this.producto = producto;
-    }
+const envioSchema = new mongoose.Schema({
+    usuarioId: String,
+    nombre: String,
+    direccion: String,
+    telefono: String,
+    referencia: String,
+    observacion: String,
+    producto: productoSchema
+});
 
-    calcularCosto() {
-        if (!this.producto) return 0;
-        const peso = this.producto.peso;
-        if (peso <= 3) return 1;
-        if (peso <= 6) return 2;
-        return 3;
-    }
-}
-module.exports = Envio;
+module.exports = mongoose.model('Envio', envioSchema);
