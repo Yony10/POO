@@ -2,17 +2,15 @@ const express = require('express');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Conexión a la base de datos (usa la clase singleton)
-require('./servicios/dataBase');
+require('./servicios/dataBase'); // conexión MongoDB
 
-const Usuario = require('./models/usuario');
 const Envio = require('./models/envio');
 
 const app = express();
 app.use(express.json());
 
 /**
- * Comprar crédito para un usuario
+ * Comprar crédito (modifica los datos en el primer envío o crea uno nuevo)
  */
 app.post('/comprar', async (req, res) => {
     const { id, nombre, monto } = req.body;
@@ -20,100 +18,145 @@ app.post('/comprar', async (req, res) => {
     const creditos = creditosMap[monto];
     if (!creditos) return res.status(400).json({ error: 'Monto inválido' });
 
-    let usuario = await Usuario.findOne({ id });
-    if (!usuario) {
-        usuario = new Usuario({ id, nombre, credito: 0 });
+    let envio = await Envio.findOne({ 'usuario.id': id });
+
+    if (!envio) {
+        envio = new Envio({
+            usuario: { id, nombre, credito: creditos }
+        });
+    } else {
+        envio.usuario.credito += creditos;
     }
 
-    usuario.credito += creditos;
-    await usuario.save();
-
-    res.json({ mensaje: 'Crédito agregado', creditos: usuario.credito });
+    await envio.save();
+    res.json({ mensaje: 'Crédito agregado', creditos: envio.usuario.credito });
 });
 
 /**
- * Obtener crédito disponible de un usuario
+ * Ver crédito de usuario
  */
 app.get('/usuario/:id/creditos', async (req, res) => {
-    const usuario = await Usuario.findOne({ id: req.params.id });
-    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const envio = await Envio.findOne({ 'usuario.id': req.params.id });
+    if (!envio) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    res.json({ creditos: usuario.credito });
+    res.json({ creditos: envio.usuario.credito });
 });
 
 /**
- * Registrar un envío nuevo (descuenta 1 crédito)
+ * Crear nuevo envío (descuenta 1 crédito)
  */
 app.post('/envios', async (req, res) => {
-    const data = req.body;
+    const { id, nombre, direccion, telefono, referencia, observacion } = req.body;
 
-    const usuario = await Usuario.findOne({ id: data.usuarioId });
-    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const envioBase = await Envio.findOne({ 'usuario.id': id });
+    if (!envioBase) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    if (usuario.credito <= 0) return res.status(400).json({ error: 'Crédito insuficiente' });
+    if (envioBase.usuario.credito <= 0) {
+        return res.status(400).json({ error: 'Crédito insuficiente' });
+    }
 
-    usuario.credito--;
-    await usuario.save();
+    envioBase.usuario.credito -= 1;
+    await envioBase.save();
 
     const nuevoEnvio = new Envio({
-        usuarioId: data.usuarioId,
-        nombre: data.nombre,
-        direccion: data.direccion,
-        telefono: data.telefono,
-        referencia: data.referencia,
-        observacion: data.observacion
+        usuario: envioBase.usuario,
+        direccion,
+        telefono,
+        referencia,
+        observacion
     });
 
     await nuevoEnvio.save();
     res.json(nuevoEnvio);
 });
-
 /**
- * Agregar un producto a un envío
+ * Agregar información de producto a un envío y descontar crédito según el peso
  */
 app.post('/envios/:id/producto', async (req, res) => {
-    const envio = await Envio.findById(req.params.id);
-    if (!envio) return res.status(404).json({ error: 'Envío no encontrado' });
+    try {
+        const envio = await Envio.findById(req.params.id);
+        if (!envio) return res.status(404).json({ error: 'Envío no encontrado' });
 
-    envio.producto = req.body;
-    await envio.save();
+        const { descripcion, peso, bultos, fecha_entrega } = req.body;
 
-    const peso = envio.producto.peso;
-    let costo = 0;
-    if (peso <= 3) costo = 1;
-    else if (peso <= 6) costo = 2;
-    else costo = 3;
+        if (!peso || typeof peso !== 'number' || peso <= 0) {
+            return res.status(400).json({ error: 'Peso inválido' });
+        }
 
-    res.json({ mensaje: 'Producto agregado', costo });
+        // Calcular costo: se cobra 1 crédito por cada 3lb (redondeado hacia arriba)
+        const costo = Math.ceil(peso / 3);
+
+        // Buscar el usuario base
+        const usuarioId = envio.usuario.id;
+        const envioBase = await Envio.findOne({ 'usuario.id': usuarioId });
+
+        if (!envioBase || envioBase.usuario.credito < costo) {
+            return res.status(400).json({ error: 'Crédito insuficiente para este envío' });
+        }
+
+        // Descontar el crédito
+        envioBase.usuario.credito -= costo;
+        await envioBase.save();
+
+        // Asignar la información del producto al envío
+        envio.producto = { descripcion, peso, bultos, fecha_entrega };
+        await envio.save();
+
+        res.json({
+            mensaje: 'Producto agregado y crédito descontado',
+            costo,
+            creditoRestante: envioBase.usuario.credito
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
 });
 
+
+
 /**
- * Ver todos los envíos de un usuario
+ * Obtener todos los envíos de un usuario
  */
 app.get('/envios/:usuarioId', async (req, res) => {
-    const envios = await Envio.find({ usuarioId: req.params.usuarioId });
+    const envios = await Envio.find({ 'usuario.id': req.params.usuarioId });
     res.json(envios);
 });
 
 /**
- * Eliminar un envío (y devolver crédito)
+ * Eliminar un envío (y devolver 1 crédito)
  */
 app.delete('/envios/:id', async (req, res) => {
     const envio = await Envio.findById(req.params.id);
     if (!envio) return res.status(404).json({ error: 'Envío no encontrado' });
 
-    const usuario = await Usuario.findOne({ id: envio.usuarioId });
-    if (usuario) {
-        usuario.credito++;
-        await usuario.save();
+    const usuarioId = envio.usuario.id;
+    const baseEnvio = await Envio.findOne({ 'usuario.id': usuarioId });
+    if (baseEnvio) {
+        baseEnvio.usuario.credito += 1;
+        await baseEnvio.save();
     }
 
     await Envio.findByIdAndDelete(req.params.id);
     res.json({ mensaje: 'Envío eliminado y crédito devuelto' });
 });
 
-// Puerto de escucha
+
+// Ver todos los envíos sin filtro
+app.get('/envios', async (req, res) => {
+    const envios = await Envio.find();
+    res.json(envios);
+});
+
+// Ver envíos de un usuario específico
+app.get('/envios/:usuarioId', async (req, res) => {
+    const envios = await Envio.find({ 'usuario.id': req.params.usuarioId });
+    res.json(envios);
+});
+
+
 const PORT = process.env.PUERTO || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
+

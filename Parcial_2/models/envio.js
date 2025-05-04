@@ -1,14 +1,21 @@
 const mongoose = require('mongoose');
-const productoSchema = require('./producto');
 
 const envioSchema = new mongoose.Schema({
-    usuarioId: String,
-    nombre: String,
+    usuario: {
+        id: String,
+        nombre: String,
+        credito: Number,
+    },
     direccion: String,
     telefono: String,
     referencia: String,
     observacion: String,
-    producto: productoSchema
+    producto: {
+        descripcion: String,
+        peso: Number,
+        bultos: Number,
+        fecha_entrega: Date
+    }
 });
 
 module.exports = mongoose.model('Envio', envioSchema);
