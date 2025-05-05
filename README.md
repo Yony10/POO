@@ -2,25 +2,38 @@
 
 Esta API permite registrar usuarios, comprar créditos, registrar envíos, agregar productos y controlar costos según el peso. Ideal para una empresa de mensajería o sistema de logística.
 
+---
+
 ## 🌐 Base URL
 
 http://localhost:3000
+
+
+---
 
 ## 🧰 Requisitos
 
 - Node.js
 - MongoDB Atlas
 
-### Instalación
+---
 
-```bash
-crear un archivo .env en la carpeta Parcial_2
+### 🚀 Instalación
 
+1. Crear un archivo `.env` en la carpeta `Parcial_2` con el siguiente contenido:
+
+```env
+PORT=3000
+MONGODB_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<nombreBaseDatos>?retryWrites=true&w=majority
+
+Reemplaza <usuario>, <password>, <cluster> y <nombreBaseDatos> por tus datos reales.
+
+2. Instalar dependencias:
 npm install
-Iniciar el servidor
-
+3. Iniciar el servidor:
 node app.js
-💳 Comprar crédito
+
+4. Comprar crédito
 Agrega crédito a un usuario (si no existe, lo crea).
 Montos válidos:
 
@@ -40,13 +53,13 @@ Ejemplo JSON:
   "nombre": "Alex Salazar",
   "monto": 160
 }
-📈 Ver crédito de un usuario
+5. Ver crédito de un usuario
 Consulta cuántos créditos tiene disponibles.
 
 GET
 http://localhost:3000/usuario/002/creditos
 
-📬 Crear un nuevo envío
+6. Crear un nuevo envío
 Crea un envío y descuenta 1 crédito automáticamente.
 
 POST
@@ -62,7 +75,7 @@ Ejemplo JSON:
   "referencia": "Casa roja",
   "observacion": "Producto Fragil"
 }
-📦 Agregar producto a un envío
+7. Agregar producto a un envío
 Agrega información del producto y descuenta créditos según el peso:
 
 1 crédito por cada 3 lb (redondeado hacia arriba)
@@ -80,25 +93,25 @@ Ejemplo JSON:
   "bultos": 2,
   "fecha_entrega": "2025-05-10"
 }
-📚 Obtener todos los envíos de un usuario
+8. Obtener todos los envíos de un usuario
 Muestra todos los envíos realizados por un usuario.
 
 GET
 http://localhost:3000/envios/002
 
-❌ Eliminar un envío
+9. Eliminar un envío
 Elimina un envío y devuelve 1 crédito al usuario.
 
 DELETE
 http://localhost:3000/envios/681791e725a6b03c208b106f
 
-👁️ Ver todos los envíos (modo admin)
+👁10. Ver todos los envíos (modo admin)
 Muestra todos los envíos sin filtro por usuario.
 
 GET
 http://localhost:3000/envios
 
-📄 Modelo de Envíos
+11. Modelo de Envíos
 
 {
   "usuario": {
