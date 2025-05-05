@@ -1,17 +1,17 @@
-# 📦 API de Gestión de Envíos y Créditos
+# API de Gestión de Envíos y Créditos
 
 Esta API permite registrar usuarios, comprar créditos, registrar envíos, agregar productos y controlar costos según el peso. Ideal para una empresa de mensajería o sistema de logística.
 
 ---
 
-## 🌐 Base URL
+##  Base URL
 
 http://localhost:3000
 
 
 ---
 
-## 🧰 Requisitos
+##  Requisitos
 
 - Node.js
 - MongoDB Atlas
@@ -29,11 +29,14 @@ MONGODB_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<nombreBase
 Reemplaza <usuario>, <password>, <cluster> y <nombreBaseDatos> por tus datos reales.
 
 2. Instalar dependencias:
-```npm install```
-3. Iniciar el servidor:
-```node app.js```
-
-4. Comprar crédito
+```
+npm install
+```
+4. Iniciar el servidor:
+```
+node app.js
+```
+6. Comprar crédito
 Agrega crédito a un usuario (si no existe, lo crea).
 Montos válidos:
 
@@ -44,8 +47,9 @@ Montos válidos:
 180 → 60 créditos
 
 POST
-```http://localhost:3000/comprar```
-
+```
+http://localhost:3000/comprar
+```
 Ejemplo JSON:
 ```
 {
