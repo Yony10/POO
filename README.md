@@ -24,9 +24,9 @@ http://localhost:3000
 
 ```env
 PORT=3000
-MONGODB_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<nombreBaseDatos>?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://(usuario):(contraseña)@cluster0.7zpoxtd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 ```
-Reemplaza <usuario>, <password>, <cluster> y <nombreBaseDatos> por tus datos reales.
+Reemplaza el usuario, la contraseña, clouster por tus datos reales.
 
 2. Instalar dependencias:
 ```
