@@ -14,6 +14,8 @@ http://localhost:3000
 ### Instalación
 
 ```bash
+crear un archivo .env en la carpeta Parcial_2
+
 npm install
 Iniciar el servidor
 
